@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Bus Tracker | Driver Dashboard</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --bg-dark: #0b0e14;
+            --glass-bg: rgba(18, 22, 30, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100vw;
+            z-index: 1;
+            background: #11141a;
+
+
+            #controls {
+                position: absolute;
+                top: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1000;
+                background: var(--glass-bg);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                padding: 24px;
+                border-radius: 20px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px inset var(--glass-border);
+                width: 90%;
+                max-width: 420px;
+                border: 1px solid var(--glass-border);
+                animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+
+            #controls-header {
+                cursor: grab;
+            }
+
+            #controls-header:active {
+                cursor: grabbing;
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translate(-50%, -20px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translate(-50%, 0);
+                }
+            }
+
+            h2 {
+                margin: 0 0 16px 0;
+                font-size: 1.4rem;
+                font-weight: 800;
+                letter-spacing: -0.5px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                pointer-events: none;
+            }
+
+            select {
+                width: 100%;
+                padding: 14px;
+                margin-bottom: 16px;
+                border-radius: 12px;
+                border: 1px solid var(--glass-border);
+                font-size: 14px;
+                box-sizing: border-box;
+                background: rgba(255, 255, 255, 0.05);
+                color: #fff;
+                transition: all 0.3s;
+                appearance: none;
+                cursor: pointer;
+            }
+
+            select:focus {
+                outline: none;
+                border-color: var(--primary);
+                background: rgba(255, 255, 255, 0.1);
+                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+            }
+
+            .btn {
+                width: 100%;
+                padding: 16px;
+                background: var(--primary);
+                color: white;
+                border: none;
+                cursor: pointer;
+                font-size: 15px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-radius: 12px;
+                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+                transition: all 0.3s ease;
+            }
+
+            .btn:hover:not(:disabled) {
+                background-color: var(--primary-hover);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+            }
+
+            .btn:disabled {
+                background-color: #475569;
+                cursor: not-allowed;
+                box-shadow: none;
+                opacity: 0.7;
+            }
+
+            #status {
+                font-weight: 700;
+                color: #ef4444;
+                margin-bottom: 16px;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                padding: 10px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 8px;
+                border: 1px solid var(--glass-border);
+            }
+
+            .status-active {
+                color: var(--success) !important;
+                background: rgba(16, 185, 129, 0.1) !important;
+                border-color: rgba(16, 185, 129, 0.2) !important;
+                animation: pulse-glow 2s infinite;
+            }
+
+            @keyframes pulse-glow {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2);
+                }
+
+                70% {
+                    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+                }
+
+                100% {
+                    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+                }
+            }
+
+            /* Top Right Logout Button */
+            #logout-btn {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                background: var(--glass-bg);
+                backdrop-filter: blur(10px);
+                border: 1px solid var(--glass-border);
+                color: white;
+                padding: 10px 16px;
+                border-radius: 10px;
+                font-weight: 600;
+                font-size: 13px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            #logout-btn:hover {
+                background: rgba(239, 68, 68, 0.8);
+                border-color: rgba(239, 68, 68, 1);
+            }
+
+            .leaflet-routing-container {
+                display: none !important;
+            }
+
+            .bus-icon {
+                font-size: 26px;
+                text-align: center;
+                line-height: 40px;
+                width: 40px !important;
+                height: 40px !important;
+                border-radius: 50%;
+                background-color: var(--primary);
+                color: white;
+                border: 2px solid #fff;
+                box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+                margin-left: -20px !important;
+                margin-top: -20px !important;
+            }
+
+            .college-icon {
+                font-size: 24px;
+                text-align: center;
+                line-height: 40px;
+                width: 40px !important;
+                height: 40px !important;
+                border-radius: 10px;
+                background-color: #8b5cf6;
+                color: white;
+                border: 2px solid #fff;
+                box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+                margin-left: -20px !important;
+                margin-top: -20px !important;
+            }
+    </style>
+</head>
+
+<body>
+
+    <!-- Security Check First -->
+    <script>
+        const storedToken = sessionStorage.getItem('driverToken');
+        if (!storedToken) {
+            // Not logged in, redirect to index
+            window.location.href = 'index.html';
+        }
+    </script>
+
+    <button id="logout-btn" onclick="logout()">Logout</button>
+
+    <div id="driver-dashboard">
+        <div id="controls">
+            <div id="controls-header">
+                <h2>🚌 Driver Dashboard</h2>
+            </div>
+            <select id="routeSelect">
+                <option value="Route A (Patia/North)">Route A (Patia/North)</option>
+                <option value="Route B (Khandagiri/South)">Route B (Khandagiri/South)</option>
+            </select>
+            <div id="status">Status: Offline</div>
+            <button id="startBtn" class="btn" onclick="startTracking()">Start Route & Share Location</button>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+    <script>
+        const socket = io('http://localhost:3000');
+        let watchId = null;
+        let driverMarker;
+        let routeControl;
+
+        // Initialize Map
+        const map = L.map('map', { zoomControl: false }).setView([20.2961, 85.8245], 13);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        const darkTileUrl = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&apistyle=s.e%3Ag%7Cp.c%3A%23242f3e%2Cs.e%3Al.t.s%7Cp.c%3A%23242f3e%2Cs.e%3Al.t.f%7Cp.c%3A%23746855%2Cs.t%3A6%7Cs.e%3Al.t.f%7Cp.c%3A%23d59563%2Cs.t%3A3%7Cs.e%3Al.t.f%7Cp.c%3A%23d59563%2Cs.t%3A3%7Cs.e%3Ag%7Cp.c%3A%23263c3f%2Cs.t%3A3%7Cs.e%3Al.t.f%7Cp.c%3A%236b9a76%2Cs.t%3A1%7Cs.e%3Ag%7Cp.c%3A%2338414e%2Cs.t%3A1%7Cs.e%3Ag.s%7Cp.c%3A%23212a37%2Cs.t%3A1%7Cs.e%3Al.t.f%7Cp.c%3A%239ca5b3%2Cs.t%3A1%7Cs.e%3Ag%7Cp.c%3A%23746855%2Cs.t%3A1%7Cs.e%3Ag.s%7Cp.c%3A%231f2835%2Cs.t%3A1%7Cs.e%3Al.t.f%7Cp.c%3A%23f3d19c%2Cs.t%3A4%7Cs.e%3Ag%7Cp.c%3A%232f3948%2Cs.t%3A4%7Cs.e%3Al.t.f%7Cp.c%3A%23d59563%2Cs.t%3A5%7Cs.e%3Ag%7Cp.c%3A%2317263c%2Cs.t%3A5%7Cs.e%3Al.t.f%7Cp.c%3A%23515c6d%2Cs.t%3A5%7Cs.e%3Al.t.s%7Cp.c%3A%2317263c';
+        L.tileLayer(darkTileUrl, {
+            maxZoom: 20,
+            attribution: '&copy; Google Maps'
+        }).addTo(map);
+
+        const collegeLocation = L.latLng(20.2496, 85.8002);
+        const collegeIcon = L.divIcon({ html: '🎓', className: 'college-icon', iconSize: [40, 40] });
+        L.marker(collegeLocation, { icon: collegeIcon }).addTo(map).bindPopup('<b>ITER Campus</b>');
+
+        const busIcon = L.divIcon({ html: '🚌', className: 'bus-icon', iconSize: [40, 40] });
+
+        // Make Controls Draggable
+        makeDraggable(document.getElementById("controls"));
+
+        function makeDraggable(elmnt) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            const header = document.getElementById("controls-header");
+            if (header) {
+                header.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+
+                // Clear the transform to prevent conflicts with absolute positioning dragging
+                elmnt.style.transform = "none";
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+
+                let newTop = elmnt.offsetTop - pos2;
+                let newLeft = elmnt.offsetLeft - pos1;
+
+                if (newTop < 0) newTop = 0;
+                if (newLeft < 0) newLeft = 0;
+                if (newTop > window.innerHeight - elmnt.offsetHeight) newTop = window.innerHeight - elmnt.offsetHeight;
+                if (newLeft > window.innerWidth - elmnt.offsetWidth) newLeft = window.innerWidth - elmnt.offsetWidth;
+
+                elmnt.style.top = newTop + "px";
+                elmnt.style.left = newLeft + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('driverToken');
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            window.location.href = 'index.html';
+        }
+
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert("GPS is not supported by your browser.");
+                return;
+            }
+            const selectedRoute = document.getElementById('routeSelect').value;
+            const statusDiv = document.getElementById('status');
+            const startBtn = document.getElementById('startBtn');
+            const routeSelect = document.getElementById('routeSelect');
+
+            statusDiv.innerText = `🟢 Broadcasting: ${selectedRoute}`;
+            statusDiv.classList.add('status-active');
+
+            startBtn.disabled = true;
+            startBtn.innerText = "Tracking Active";
+            routeSelect.disabled = true;
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const driverLatLng = L.latLng(lat, lng);
+
+                    // Use the token we verified at the top of the page
+                    socket.emit('send-location', {
+                        lat, lng, routeId: selectedRoute, token: storedToken
+                    });
+
+                    if (!driverMarker) {
+                        driverMarker = L.marker(driverLatLng, { icon: busIcon }).addTo(map);
+                        map.setView(driverLatLng, 15);
+                    } else {
+                        driverMarker.setLatLng(driverLatLng);
+                    }
+
+                    if (routeControl) {
+                        routeControl.setWaypoints([driverLatLng, collegeLocation]);
+                    } else {
+                        routeControl = L.Routing.control({
+                            waypoints: [driverLatLng, collegeLocation],
+                            routeWhileDragging: false,
+                            createMarker: function () { return null; },
+                            lineOptions: { styles: [{ color: '#3b82f6', opacity: 0.8, weight: 6 }] }
+                        }).addTo(map);
+                    }
+                },
+                (error) => {
+                    console.error("GPS Error:", error);
+                    statusDiv.innerText = `⚠️ GPS Error: ${error.message}`;
+                    statusDiv.classList.remove('status-active');
+                    statusDiv.style.color = '#ef4444';
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+    </script>
+</body>
+
+</html>

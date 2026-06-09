@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Bus Tracker | Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg-dark: #0b0e14;
+            --glass-bg: rgba(18, 22, 30, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --error: #ef4444;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-dark) 70%);
+        }
+
+        /* Animated Background Elements */
+        .bg-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -200px;
+            right: -200px;
+            z-index: 0;
+            animation: pulse 8s infinite alternate ease-in-out;
+        }
+
+        .bg-glow-2 {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -150px;
+            left: -150px;
+            z-index: 0;
+            animation: pulse 10s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.2); opacity: 1; }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05) inset;
+            box-sizing: border-box;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .logo-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: inline-block;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 6px rgba(59,130,246,0.3));
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            margin: 8px 0 0 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Toggle Switch */
+        .role-toggle {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 30px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .role-btn.active {
+            color: var(--text-main);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: var(--glass-border);
+            border-radius: 8px;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* Input Fields */
+        .input-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            margin-left: 4px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+
+        .input-field::placeholder {
+            color: #475569;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-msg {
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-top: -12px;
+            margin-bottom: 16px;
+            display: none;
+            font-weight: 600;
+            padding-left: 4px;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow"></div>
+    <div class="bg-glow-2"></div>
+
+    <div class="login-container">
+        <div class="logo-area">
+            <span class="logo-icon">🚍</span>
+            <h1>Campus Bus Tracker</h1>
+            <p class="subtitle">Intelligent Transit System</p>
+        </div>
+
+        <div class="role-toggle">
+            <div class="toggle-slider" id="toggleSlider"></div>
+            <button class="role-btn active" id="btnStudent" onclick="switchRole('student')">Student</button>
+            <button class="role-btn" id="btnDriver" onclick="switchRole('driver')">Driver</button>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label" id="authLabel">Registration Number</label>
+            <input type="text" id="authInput" class="input-field" placeholder="Enter your 10-digit ID" autocomplete="off">
+        </div>
+        
+        <div class="error-msg" id="errorMsg">Invalid credentials.</div>
+
+        <button class="submit-btn" id="loginBtn" onclick="handleLogin()">
+            <span id="btnText">Access Portal</span>
+            <div class="spinner" id="btnSpinner"></div>
+        </button>
+    </div>
+
+    <script>
+        let currentRole = 'student';
+        
+        function switchRole(role) {
+            currentRole = role;
+            const slider = document.getElementById('toggleSlider');
+            const btnStudent = document.getElementById('btnStudent');
+            const btnDriver = document.getElementById('btnDriver');
+            const authLabel = document.getElementById('authLabel');
+            const authInput = document.getElementById('authInput');
+            const errorMsg = document.getElementById('errorMsg');
+
+            errorMsg.style.display = 'none'; // Clear errors
+            authInput.value = ''; // Clear input
+
+            if (role === 'student') {
+                slider.style.transform = 'translateX(0)';
+                btnStudent.classList.add('active');
+                btnDriver.classList.remove('active');
+                authLabel.innerText = 'Registration Number';
+                authInput.type = 'text';
+                authInput.placeholder = 'Enter your 10-digit ID';
+            } else {
+                slider.style.transform = 'translateX(100%)';
+                btnDriver.classList.add('active');
+                btnStudent.classList.remove('active');
+                authLabel.innerText = 'Authentication PIN';
+                authInput.type = 'password';
+                authInput.placeholder = 'Enter 4-digit PIN';
+            }
+        }
+
+        async function handleLogin() {
+            const inputValue = document.getElementById('authInput').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            const loginBtn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+
+            errorMsg.style.display = 'none';
+
+            if (!inputValue) {
+                showError("Please enter your credentials.");
+                return;
+            }
+
+            if (currentRole === 'student') {
+                if (/^[0-9]{10}$/.test(inputValue)) {
+                    // Valid Student
+                    setLoading(true);
+                    setTimeout(() => {
+                        window.location.href = `student.html?id=${inputValue}`;
+                    }, 600); // Fake small delay for premium feel
+                } else {
+                    showError("Invalid ID. Must be 10 digits.");
+                }
+            } else {
+                // Driver flow - connect to backend
+                setLoading(true);
+                
+                try {
+                    const response = await fetch('http://localhost:3000/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pin: inputValue })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Store token securely
+                        sessionStorage.setItem('driverToken', data.token);
+                        window.location.href = 'driver.html';
+                    } else {
+                        setLoading(false);
+                        showError("Invalid Driver PIN.");
+                    }
+                } catch (err) {
+                    setLoading(false);
+                    showError("Server connection failed. Is the backend running?");
+                }
+            }
+        }
+
+        function showError(msg) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.innerText = msg;
+            errorMsg.style.display = 'block';
+            
+            // Re-trigger animation
+            errorMsg.style.animation = 'none';
+            errorMsg.offsetHeight; /* trigger reflow */
+            errorMsg.style.animation = null; 
+        }
+
+        function setLoading(isLoading) {
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const loginBtn = document.getElementById('loginBtn');
+            const authInput = document.getElementById('authInput');
+
+            if (isLoading) {
+                btnText.style.display = 'none';
+                btnSpinner.style.display = 'block';
+                loginBtn.disabled = true;
+                authInput.disabled = true;
+                loginBtn.style.opacity = '0.8';
+            } else {
+                btnText.style.display = 'block';
+                btnSpinner.style.display = 'none';
+                loginBtn.disabled = false;
+                authInput.disabled = false;
+                loginBtn.style.opacity = '1';
+            }
+        }
+
+        // Allow pressing Enter to submit
+        document.getElementById('authInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+    </script>
+</body>
+</html>
